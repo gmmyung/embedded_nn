@@ -1,0 +1,25 @@
+[package]
+name = "embedded_nn"
+authors = ["Gyungmin Myung <ryan000502@gmail.com>"]
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cortex-m = "*"
+cortex-m-rt = "*"
+rtt-target = { version = "*", features = ["cortex-m"] }
+panic-rtt-target = { version = "*", features = ["cortex-m"] }
+stm32f3xx-hal = {version = "*", features = ["stm32f303xc"]}
+
+# this lets you use `cargo fix`!
+[[bin]]
+name = "embedded_nn"
+test = false
+bench = false
+
+[profile.release]
+codegen-units = 1 # better optimizations
+debug = true # symbols are nice and they don't increase the size on Flash
+lto = true # better optimizations
