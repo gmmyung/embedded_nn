@@ -7,11 +7,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cortex-m = "*"
+cortex-m = "0.7.6"
 cortex-m-rt = "*"
+panic-halt = "*"
 rtt-target = { version = "*", features = ["cortex-m"] }
 panic-rtt-target = { version = "*", features = ["cortex-m"] }
 stm32f3xx-hal = {version = "*", features = ["stm32f303xc"]}
+
 
 # this lets you use `cargo fix`!
 [[bin]]
