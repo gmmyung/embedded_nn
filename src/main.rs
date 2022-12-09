@@ -14,12 +14,13 @@ use stm32f3xx_hal::gpio::{Edge, Input};
 use stm32f3xx_hal::pac::{CorePeripherals, Peripherals};
 use stm32f3xx_hal::{interrupt, prelude::*};
 
+#[derive(Clone, Copy)]
 enum LedMode {
     Blink,
     Stay,
 }
 
-static LEDSTATE: Mutex<RefCell<Option<LedMode>>> = Mutex::new(RefCell::new(Some(LedMode::Blink)));
+static LEDSTATE: Mutex<RefCell<LedMode>> = Mutex::new(RefCell::new(LedMode::Blink));
 type ButtonPin = stm32f3xx_hal::gpio::PA0<Input>;
 static BUTTON: Mutex<RefCell<Option<ButtonPin>>> = Mutex::new(RefCell::new(None));
 
@@ -54,24 +55,26 @@ fn main() -> ! {
     let interrupt_num = user_button.interrupt();
     cortex_m::interrupt::free(|cs| *BUTTON.borrow(cs).borrow_mut() = Some(user_button));
     unsafe { NVIC::unmask(interrupt_num) };
+    let mut current_state = LedMode::Blink;
 
     loop {
         cortex_m::interrupt::free(|cs| {
-            match LEDSTATE.borrow(cs).borrow().as_ref().unwrap() {
-                LedMode::Blink => {
-                    pe9.set_high().unwrap();
-                    rprintln!("LED ON!");
-                    delay.delay_ms(100.milliseconds());
-                    pe9.set_low().unwrap();
-                    rprintln!("LED OFF!");
-                    delay.delay_ms(300.milliseconds());
-                    // panic!("test panic")
-                }
-                LedMode::Stay => {
-                    pe9.set_high().unwrap();
-                }
-            }
+            current_state = *LEDSTATE.borrow(cs).borrow();
         });
+        match current_state {
+            LedMode::Blink => {
+                pe9.set_high().unwrap();
+                rprintln!("LED ON!");
+                delay.delay_ms(100.milliseconds());
+                pe9.set_low().unwrap();
+                rprintln!("LED OFF!");
+                delay.delay_ms(300.milliseconds());
+                // panic!("test panic")
+            }
+            LedMode::Stay => {
+                pe9.set_high().unwrap();
+            }
+        }
     }
 }
 
@@ -87,12 +90,12 @@ fn EXTI0() {
             .unwrap()
             .clear_interrupt();
         let mut led_ref = LEDSTATE.borrow(cs).borrow_mut();
-        match led_ref.as_ref().unwrap() {
+        match *led_ref {
             LedMode::Blink => {
-                *led_ref.as_mut().unwrap() = LedMode::Stay;
+                *led_ref = LedMode::Stay;
             }
             LedMode::Stay => {
-                *led_ref.as_mut().unwrap() = LedMode::Blink;
+                *led_ref = LedMode::Blink;
             }
         }
     });
